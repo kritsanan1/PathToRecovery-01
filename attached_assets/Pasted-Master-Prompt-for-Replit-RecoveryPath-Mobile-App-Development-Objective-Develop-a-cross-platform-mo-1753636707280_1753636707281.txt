@@ -1,0 +1,205 @@
+Master Prompt for Replit: RecoveryPath Mobile App Development
+Objective: Develop a cross-platform mobile application called RecoveryPath for drug addiction patients in Thailand, as outlined in the provided PRD. The app should be user-friendly, visually appealing, and culturally relevant, with features for recovery tracking, educational resources, community support, crisis intervention, and gamification. Use Replit to prototype, develop, and test the app.
+
+Environment: Replit (web-based IDE)
+
+1. Project Setup Instructions
+Create a New Replit Project:
+Go to Replit and create a new project.
+Select Flutter as the language/template (Flutter is ideal for cross-platform mobile apps with a single codebase).
+Name the project: RecoveryPath.
+Install Dependencies:
+Ensure Flutter SDK is set up in Replit (Replit supports Flutter natively or via Dart).
+Add the following dependencies in pubspec.yaml:
+yaml
+
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^2.24.0
+  firebase_auth: ^4.16.0
+  cloud_firestore: ^4.14.0
+  http: ^1.2.0
+  cached_network_image: ^3.3.0
+  provider: ^6.1.0
+  flutter_local_notifications: ^16.2.0
+  geolocator: ^10.1.0
+Run flutter pub get to install dependencies.
+Directory Structure:
+Organize the project with a clear structure:
+text
+
+
+
+/lib
+  /models
+    - user.dart
+    - progress.dart
+    - resource.dart
+  /screens
+    - home_screen.dart
+    - tracking_screen.dart
+    - resources_screen.dart
+    - community_screen.dart
+    - crisis_screen.dart
+  /widgets
+    - progress_chart.dart
+    - resource_card.dart
+    - chat_message.dart
+  /services
+    - auth_service.dart
+    - database_service.dart
+    - notification_service.dart
+  /utils
+    - constants.dart
+    - theme.dart
+  main.dart
+2. Technology Stack
+Frontend: Flutter (Dart) for cross-platform iOS/Android development.
+Backend: Firebase for authentication, Firestore for data storage, and Cloud Functions for server-side logic.
+APIs:
+Integrate with Thai helpline APIs (e.g., 1413) for crisis support (mock API if real API is unavailable).
+Use Google Maps API or geolocator for locating nearby rehab centers.
+Offline Support: Use cached_network_image and local storage for offline resource access.
+Notifications: Use flutter_local_notifications for reminders and motivational messages.
+3. Core Features Implementation
+Below are guidelines for implementing the key features from the PRD in Replit:
+
+3.1 Recovery Tracking
+Objective: Allow users to log sobriety progress, mood, and medication adherence.
+Implementation:
+Create a Progress model in /models/progress.dart:
+dart
+
+
+
+class Progress {
+  String id;
+  DateTime date;
+  String mood;
+  bool medicationTaken;
+  int sobrietyDays;
+
+  Progress({this.id, this.date, this.mood, this.medicationTaken, this.sobrietyDays});
+}
+Build a TrackingScreen in /screens/tracking_screen.dart with a form for daily check-ins and a chart widget.
+Use provider for state management to update progress in real-time.
+Store progress in Firestore under users/{userId}/progress.
+3.2 Educational Resources
+Objective: Provide a library of articles and videos.
+Implementation:
+Create a Resource model in /models/resource.dart:
+dart
+
+
+
+class Resource {
+  String id;
+  String title;
+  String type; // article or video
+  String url;
+  bool isOfflineAvailable;
+
+  Resource({this.id, this.title, this.type, this.url, this.isOfflineAvailable});
+}
+Build a ResourcesScreen in /screens/resources_screen.dart with a list of ResourceCard widgets.
+Cache resources using cached_network_image for offline access.
+Fetch content from Firestore or a mock API (e.g., JSON file in Replit).
+3.3 Community Support
+Objective: Create an anonymous chat forum.
+Implementation:
+Use Firestore to store chat messages under chats/{threadId}/messages.
+Build a CommunityScreen in /screens/community_screen.dart with a real-time chat UI using StreamBuilder.
+Implement moderation logic (e.g., flag inappropriate messages) in a Cloud Function.
+Ensure anonymity by using Firebase Anonymous Authentication.
+3.4 Crisis Intervention
+Objective: Provide one-tap access to helplines and calming exercises.
+Implementation:
+Build a CrisisScreen in /screens/crisis_screen.dart with buttons for:
+Calling 1413 (use url_launcher to initiate calls).
+Guided breathing exercises (use animations for a visual timer).
+Use geolocator to display nearby rehab centers based on user location.
+Store a static list of helplines in /utils/constants.dart.
+3.5 Gamification
+Objective: Add badges and motivational quotes.
+Implementation:
+Create a badge system in Firestore under users/{userId}/badges.
+Display badges on the HomeScreen in /screens/home_screen.dart.
+Use a local JSON file in /utils/constants.dart for Thai cultural quotes (e.g., Buddhist proverbs).
+Implement weekly challenges with progress tracking.
+4. UI/UX Guidelines
+Theme: Create a calming theme in /utils/theme.dart with colors inspired by Thai culture (e.g., blue: #4A90E2, green: #2ECC71, gold: #FFD700).
+Accessibility:
+Use TextStyle with scalable fonts and high contrast.
+Implement voice navigation using Flutter’s speech_to_text package.
+Navigation: Use a BottomNavigationBar for easy access to Home, Tracking, Resources, Community, and Crisis screens.
+Onboarding: Create an onboarding flow in main.dart with an option for anonymous login.
+5. Security and Compliance
+Anonymity: Use Firebase Anonymous Authentication for users who opt for no personal data.
+Data Protection: Enable Firestore security rules to restrict data access:
+javascript
+
+
+
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+  }
+}
+Compliance: Ensure data handling complies with Thailand’s PDPA by minimizing data collection and using encryption.
+6. Testing in Replit
+Unit Testing: Write tests for models and services in /test directory using flutter test.
+UI Testing: Use Replit’s device emulator to test on Android/iOS layouts.
+Offline Testing: Simulate offline mode by disabling network in Replit and verifying cached resources.
+User Testing: Share the Replit project link with beta testers (e.g., rehab center staff) for feedback.
+7. Deployment
+Prototype: Use Replit’s hosting to share a web-based demo.
+Mobile Build: Generate APK for Android using flutter build apk in Replit’s terminal.
+Future Deployment: Package for Google Play Store and App Store after testing.
+8. Sample Code Snippet
+Here’s a sample main.dart to initialize the app:
+
+dart
+
+
+
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'screens/home_screen.dart';
+import 'utils/theme.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(RecoveryPathApp());
+}
+
+class RecoveryPathApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'RecoveryPath',
+      theme: appTheme,
+      home: HomeScreen(),
+    );
+  }
+}
+9. Replit-Specific Tips
+Resource Constraints: Replit has limited CPU/memory, so optimize Flutter builds with flutter run --release.
+Collaboration: Use Replit’s multiplayer feature to work with team members in real-time.
+Version Control: Use Replit’s built-in Git integration to manage code versions.
+Debugging: Enable Flutter DevTools in Replit for performance profiling.
+10. Next Steps
+Set up the Replit project with the above structure.
+Implement one feature at a time, starting with Recovery Tracking.
+Test each feature in Replit’s emulator.
+Share the prototype with stakeholders for feedback.
+Iterate based on user testing with rehab centers.
+Note: If you need help with specific code implementation (e.g., a particular screen or feature), provide details, and I can generate the code for you to use in Replit.
