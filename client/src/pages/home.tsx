@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +18,7 @@ export default function Home() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [showCrisis, setShowCrisis] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
@@ -270,6 +272,41 @@ export default function Home() {
             </CardContent>
           </Card>
         </section>
+
+        {/* Premium Upgrade Banner */}
+        {!(user as any)?.isPremium && (
+          <section className="px-4 mb-6">
+            <div className="bg-gradient-to-r from-primary to-secondary p-4 rounded-card text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h3 className="font-medium font-kanit mb-1">อัปเกรดเป็น Premium</h3>
+                  <p className="text-xs text-white/80 font-sarabun">ปลดล็อกการวิเคราะห์ขั้นสูงและฟีเจอร์พิเศษ</p>
+                </div>
+                <Button
+                  onClick={() => setLocation('/payment')}
+                  size="sm"
+                  className="bg-white text-primary hover:bg-white/90 ml-3"
+                >
+                  <i className="fas fa-crown mr-1"></i>
+                  อัปเกรด
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Premium Badge */}
+        {(user as any)?.isPremium && (
+          <section className="px-4 mb-6">
+            <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-3 rounded-card text-white">
+              <div className="flex items-center">
+                <i className="fas fa-crown mr-2"></i>
+                <span className="font-medium font-kanit">สมาชิก Premium</span>
+                <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">ใช้งานได้</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Educational Resources */}
         <section className="px-4 mb-6">

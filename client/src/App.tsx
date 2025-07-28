@@ -13,6 +13,8 @@ import Community from "@/pages/community";
 import Crisis from "@/pages/crisis";
 import Analytics from "@/pages/analytics";
 import GoalSetting from "@/pages/goal-setting";
+import Payment from "@/pages/payment";
+import PaymentSuccess from "@/pages/payment-success";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -43,6 +45,8 @@ function Router() {
           <Route path="/crisis" component={Crisis} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/goals" component={GoalSetting} />
+          <Route path="/payment" component={Payment} />
+          <Route path="/payment-success" component={PaymentSuccess} />
         </>
       )}
       <Route component={NotFound} />

@@ -4,6 +4,14 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertMoodEntrySchema, insertCommunityPostSchema, insertMilestoneSchema } from "@shared/schema";
+import Stripe from "stripe";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-06-30.basil",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -178,6 +186,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching rehab centers:", error);
       res.status(500).json({ message: "Failed to fetch rehab centers" });
+    }
+  });
+
+  // Stripe payment routes
+  app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
+    try {
+      const { amount, currency = "thb", productName } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to smallest currency unit
+        currency: currency.toLowerCase(),
+        metadata: {
+          userId,
+          productName: productName || "RecoveryPath Premium",
+          userEmail: user?.email || "",
+        },
+        receipt_email: user?.email || undefined,
+      });
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  app.post("/api/create-qr-payment", isAuthenticated, async (req: any, res) => {
+    try {
+      const { amount, currency = "thb", productName } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Create payment intent for QR code payments (PromptPay in Thailand)
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency: currency.toLowerCase(),
+        payment_method_types: ['promptpay'], // Thai QR payment method
+        metadata: {
+          userId,
+          productName: productName || "RecoveryPath Premium",
+          userEmail: user?.email || "",
+          paymentType: "qr_code",
+        },
+        receipt_email: user?.email || undefined,
+      });
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        paymentMethod: 'promptpay'
+      });
+    } catch (error: any) {
+      console.error("Error creating QR payment:", error);
+      res.status(500).json({ message: "Error creating QR payment: " + error.message });
+    }
+  });
+
+  app.post("/api/confirm-payment", isAuthenticated, async (req: any, res) => {
+    try {
+      const { paymentIntentId } = req.body;
+      const userId = req.user.claims.sub;
+      
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === 'succeeded') {
+        // Update user to premium status
+        await storage.updateUserPremiumStatus(userId, true);
+        
+        res.json({ 
+          status: 'succeeded',
+          message: 'Payment successful! Premium features unlocked.',
+          isPremium: true
+        });
+      } else {
+        res.json({ 
+          status: paymentIntent.status,
+          message: 'Payment is being processed.'
+        });
+      }
+    } catch (error: any) {
+      console.error("Error confirming payment:", error);
+      res.status(500).json({ message: "Error confirming payment: " + error.message });
+    }
+  });
+
+  app.get("/api/payment-status/:paymentIntentId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { paymentIntentId } = req.params;
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      res.json({ 
+        status: paymentIntent.status,
+        amount: paymentIntent.amount / 100,
+        currency: paymentIntent.currency.toUpperCase()
+      });
+    } catch (error: any) {
+      console.error("Error checking payment status:", error);
+      res.status(500).json({ message: "Error checking payment status: " + error.message });
     }
   });
 

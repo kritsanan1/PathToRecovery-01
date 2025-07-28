@@ -183,6 +183,31 @@ export class DatabaseStorage implements IStorage {
     const [newCenter] = await db.insert(rehabCenters).values(center).returning();
     return newCenter;
   }
+
+  // Premium user management
+  async updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set({ 
+        isPremium,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async updateUserStripeCustomerId(userId: string, stripeCustomerId: string): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set({ 
+        stripeCustomerId,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
 }
 
 export const storage = new DatabaseStorage();
