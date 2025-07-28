@@ -10,6 +10,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import CrisisModal from "@/components/CrisisModal";
 import BreathingExercise from "@/components/BreathingExercise";
 import ProgressChart from "@/components/ProgressChart";
+import SmartNotificationSystem from "@/components/SmartNotificationSystem";
 import type { User, MoodEntry, Milestone, Resource, CommunityPost } from "@shared/schema";
 
 export default function Home() {
@@ -126,9 +127,7 @@ export default function Home() {
             <h1 className="text-lg font-semibold text-primary font-kanit">RecoveryPath</h1>
           </div>
           <div className="flex items-center space-x-3">
-            <button className="relative p-2 text-gray-500 hover:text-primary transition-colors">
-              <i className="fas fa-bell text-lg"></i>
-            </button>
+            <SmartNotificationSystem />
             {(user as any)?.profileImageUrl && (
               <img 
                 src={(user as any).profileImageUrl} 

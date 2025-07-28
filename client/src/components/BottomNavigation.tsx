@@ -11,9 +11,9 @@ export default function BottomNavigation({ currentTab }: BottomNavigationProps) 
   const tabs = [
     { id: 'home', name: 'หน้าหลัก', icon: 'fas fa-home', path: '/' },
     { id: 'progress', name: 'ความก้าวหน้า', icon: 'fas fa-chart-line', path: '/progress' },
-    { id: 'resources', name: 'แหล่งความรู้', icon: 'fas fa-book', path: '/resources' },
+    { id: 'goals', name: 'เป้าหมาย', icon: 'fas fa-bullseye', path: '/goals' },
+    { id: 'analytics', name: 'วิเคราะห์', icon: 'fas fa-brain', path: '/analytics' },
     { id: 'community', name: 'ชุมชน', icon: 'fas fa-users', path: '/community' },
-    { id: 'crisis', name: 'ช่วยเหลือ', icon: 'fas fa-shield-alt', path: '/crisis' },
   ];
 
   return (

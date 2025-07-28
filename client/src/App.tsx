@@ -11,6 +11,8 @@ import Progress from "@/pages/progress";
 import Resources from "@/pages/resources";
 import Community from "@/pages/community";
 import Crisis from "@/pages/crisis";
+import Analytics from "@/pages/analytics";
+import GoalSetting from "@/pages/goal-setting";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,6 +41,8 @@ function Router() {
           <Route path="/resources" component={Resources} />
           <Route path="/community" component={Community} />
           <Route path="/crisis" component={Crisis} />
+          <Route path="/analytics" component={Analytics} />
+          <Route path="/goals" component={GoalSetting} />
         </>
       )}
       <Route component={NotFound} />

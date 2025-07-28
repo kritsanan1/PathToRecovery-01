@@ -146,6 +146,11 @@ export class DatabaseStorage implements IStorage {
     return resource;
   }
 
+  async createResource(resource: any): Promise<Resource> {
+    const [newResource] = await db.insert(resources).values(resource).returning();
+    return newResource;
+  }
+
   // Community
   async createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost> {
     const [newPost] = await db.insert(communityPosts).values(post).returning();
@@ -167,6 +172,16 @@ export class DatabaseStorage implements IStorage {
 
   async getRehabCenters(): Promise<RehabCenter[]> {
     return db.select().from(rehabCenters).orderBy(rehabCenters.name);
+  }
+
+  async createEmergencyContact(contact: any): Promise<EmergencyContact> {
+    const [newContact] = await db.insert(emergencyContacts).values(contact).returning();
+    return newContact;
+  }
+
+  async createRehabCenter(center: any): Promise<RehabCenter> {
+    const [newCenter] = await db.insert(rehabCenters).values(center).returning();
+    return newCenter;
   }
 }
 

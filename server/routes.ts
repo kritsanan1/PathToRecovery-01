@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertMoodEntrySchema, insertCommunityPostSchema } from "@shared/schema";
+import { insertMoodEntrySchema, insertCommunityPostSchema, insertMilestoneSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -71,6 +71,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching milestones:", error);
       res.status(500).json({ message: "Failed to fetch milestones" });
+    }
+  });
+
+  app.post('/api/milestones', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertMilestoneSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      const milestone = await storage.createMilestone(validatedData);
+      res.json(milestone);
+    } catch (error) {
+      console.error("Error creating milestone:", error);
+      res.status(400).json({ message: "Failed to create milestone" });
     }
   });
 

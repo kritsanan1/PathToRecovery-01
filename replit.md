@@ -20,6 +20,14 @@ Preferred communication style: Simple, everyday language.
 - WebSocket: Real-time chat server configured and operational
 - Frontend: React app with Thai localization loading correctly
 
+**Advanced Features Added (July 28, 2025)**
+- AI-powered analytics dashboard with mood trends, streaks, and predictive scoring
+- Smart goal setting system with personalized milestone recommendations
+- Intelligent notification system with crisis detection and motivational alerts
+- Advanced progress tracking with recovery insights and achievement recognition
+- Enhanced navigation with analytics and goal management pages
+- Sample data seeding for testing all advanced features
+
 ## System Architecture
 
 ### Frontend Architecture
