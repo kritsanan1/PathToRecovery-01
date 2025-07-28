@@ -6,6 +6,14 @@ import {
   communityPosts,
   emergencyContacts,
   rehabCenters,
+  discussionChannels,
+  channelMessages,
+  doctors,
+  consultations,
+  chatbotConversations,
+  chatbotMessages,
+  contentCategories,
+  enhancedResources,
   type User,
   type UpsertUser,
   type MoodEntry,
@@ -17,14 +25,31 @@ import {
   type InsertCommunityPost,
   type EmergencyContact,
   type RehabCenter,
+  type DiscussionChannel,
+  type InsertDiscussionChannel,
+  type ChannelMessage,
+  type InsertChannelMessage,
+  type Doctor,
+  type InsertDoctor,
+  type Consultation,
+  type InsertConsultation,
+  type ChatbotConversation,
+  type InsertChatbotConversation,
+  type ChatbotMessage,
+  type InsertChatbotMessage,
+  type ContentCategory,
+  type InsertContentCategory,
+  type EnhancedResource,
+  type InsertEnhancedResource,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<void>;
   
   // Mood tracking
   createMoodEntry(moodEntry: InsertMoodEntry): Promise<MoodEntry>;
@@ -41,9 +66,36 @@ export interface IStorage {
   getResourcesByCategory(category: string): Promise<Resource[]>;
   getResource(id: string): Promise<Resource | undefined>;
   
+  // Enhanced content management
+  getContentCategories(): Promise<ContentCategory[]>;
+  createContentCategory(category: InsertContentCategory): Promise<ContentCategory>;
+  getEnhancedResources(categoryId?: string): Promise<EnhancedResource[]>;
+  createEnhancedResource(resource: InsertEnhancedResource): Promise<EnhancedResource>;
+  getEnhancedResource(id: string): Promise<EnhancedResource | undefined>;
+  updateResourceViews(id: string): Promise<void>;
+  
   // Community
   createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
   getCommunityPosts(limit?: number): Promise<CommunityPost[]>;
+  
+  // Discussion channels
+  getDiscussionChannels(): Promise<DiscussionChannel[]>;
+  createDiscussionChannel(channel: InsertDiscussionChannel): Promise<DiscussionChannel>;
+  getChannelMessages(channelId: string, limit?: number): Promise<ChannelMessage[]>;
+  createChannelMessage(message: InsertChannelMessage): Promise<ChannelMessage>;
+  
+  // Doctor consultation
+  getDoctors(specialization?: string): Promise<Doctor[]>;
+  createDoctor(doctor: InsertDoctor): Promise<Doctor>;
+  getConsultations(userId: string): Promise<Consultation[]>;
+  createConsultation(consultation: InsertConsultation): Promise<Consultation>;
+  updateConsultationStatus(id: string, status: string): Promise<Consultation>;
+  
+  // AI Chatbot
+  getChatbotConversations(userId: string): Promise<ChatbotConversation[]>;
+  createChatbotConversation(conversation: InsertChatbotConversation): Promise<ChatbotConversation>;
+  getChatbotMessages(conversationId: string): Promise<ChatbotMessage[]>;
+  createChatbotMessage(message: InsertChatbotMessage): Promise<ChatbotMessage>;
   
   // Emergency and locations
   getEmergencyContacts(): Promise<EmergencyContact[]>;
@@ -70,6 +122,13 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<void> {
+    await db
+      .update(users)
+      .set({ isPremium, updatedAt: new Date() })
+      .where(eq(users.id, userId));
   }
 
   // Mood tracking
@@ -174,39 +233,132 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(rehabCenters).orderBy(rehabCenters.name);
   }
 
-  async createEmergencyContact(contact: any): Promise<EmergencyContact> {
-    const [newContact] = await db.insert(emergencyContacts).values(contact).returning();
-    return newContact;
+  // Enhanced content management
+  async getContentCategories(): Promise<ContentCategory[]> {
+    return db.select().from(contentCategories).orderBy(contentCategories.orderIndex);
   }
 
-  async createRehabCenter(center: any): Promise<RehabCenter> {
-    const [newCenter] = await db.insert(rehabCenters).values(center).returning();
-    return newCenter;
+  async createContentCategory(category: InsertContentCategory): Promise<ContentCategory> {
+    const [newCategory] = await db.insert(contentCategories).values(category).returning();
+    return newCategory;
   }
 
-  // Premium user management
-  async updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User> {
+  async getEnhancedResources(categoryId?: string): Promise<EnhancedResource[]> {
+    if (categoryId) {
+      return db
+        .select()
+        .from(enhancedResources)
+        .where(and(eq(enhancedResources.categoryId, categoryId), eq(enhancedResources.isPublished, true)))
+        .orderBy(desc(enhancedResources.createdAt));
+    }
+    return db.select().from(enhancedResources).where(eq(enhancedResources.isPublished, true)).orderBy(desc(enhancedResources.createdAt));
+  }
+
+  async createEnhancedResource(resource: InsertEnhancedResource): Promise<EnhancedResource> {
+    const [newResource] = await db.insert(enhancedResources).values(resource).returning();
+    return newResource;
+  }
+
+  async getEnhancedResource(id: string): Promise<EnhancedResource | undefined> {
+    const [resource] = await db.select().from(enhancedResources).where(eq(enhancedResources.id, id));
+    return resource;
+  }
+
+  async updateResourceViews(id: string): Promise<void> {
+    await db
+      .update(enhancedResources)
+      .set({ viewCount: sql`${enhancedResources.viewCount} + 1` })
+      .where(eq(enhancedResources.id, id));
+  }
+
+  // Discussion channels
+  async getDiscussionChannels(): Promise<DiscussionChannel[]> {
+    return db.select().from(discussionChannels).orderBy(discussionChannels.name);
+  }
+
+  async createDiscussionChannel(channel: InsertDiscussionChannel): Promise<DiscussionChannel> {
+    const [newChannel] = await db.insert(discussionChannels).values(channel).returning();
+    return newChannel;
+  }
+
+  async getChannelMessages(channelId: string, limit = 50): Promise<ChannelMessage[]> {
+    return db
+      .select()
+      .from(channelMessages)
+      .where(eq(channelMessages.channelId, channelId))
+      .orderBy(desc(channelMessages.createdAt))
+      .limit(limit);
+  }
+
+  async createChannelMessage(message: InsertChannelMessage): Promise<ChannelMessage> {
+    const [newMessage] = await db.insert(channelMessages).values(message).returning();
+    return newMessage;
+  }
+
+  // Doctor consultation
+  async getDoctors(specialization?: string): Promise<Doctor[]> {
+    if (specialization) {
+      return db
+        .select()
+        .from(doctors)
+        .where(and(eq(doctors.specialization, specialization), eq(doctors.isAvailable, true)))
+        .orderBy(desc(doctors.rating));
+    }
+    return db.select().from(doctors).where(eq(doctors.isAvailable, true)).orderBy(desc(doctors.rating));
+  }
+
+  async createDoctor(doctor: InsertDoctor): Promise<Doctor> {
+    const [newDoctor] = await db.insert(doctors).values(doctor).returning();
+    return newDoctor;
+  }
+
+  async getConsultations(userId: string): Promise<Consultation[]> {
+    return db
+      .select()
+      .from(consultations)
+      .where(eq(consultations.patientId, userId))
+      .orderBy(desc(consultations.createdAt));
+  }
+
+  async createConsultation(consultation: InsertConsultation): Promise<Consultation> {
+    const [newConsultation] = await db.insert(consultations).values(consultation).returning();
+    return newConsultation;
+  }
+
+  async updateConsultationStatus(id: string, status: string): Promise<Consultation> {
     const [updated] = await db
-      .update(users)
-      .set({ 
-        isPremium,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId))
+      .update(consultations)
+      .set({ status })
+      .where(eq(consultations.id, id))
       .returning();
     return updated;
   }
 
-  async updateUserStripeCustomerId(userId: string, stripeCustomerId: string): Promise<User> {
-    const [updated] = await db
-      .update(users)
-      .set({ 
-        stripeCustomerId,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return updated;
+  // AI Chatbot
+  async getChatbotConversations(userId: string): Promise<ChatbotConversation[]> {
+    return db
+      .select()
+      .from(chatbotConversations)
+      .where(eq(chatbotConversations.userId, userId))
+      .orderBy(desc(chatbotConversations.updatedAt));
+  }
+
+  async createChatbotConversation(conversation: InsertChatbotConversation): Promise<ChatbotConversation> {
+    const [newConversation] = await db.insert(chatbotConversations).values(conversation).returning();
+    return newConversation;
+  }
+
+  async getChatbotMessages(conversationId: string): Promise<ChatbotMessage[]> {
+    return db
+      .select()
+      .from(chatbotMessages)
+      .where(eq(chatbotMessages.conversationId, conversationId))
+      .orderBy(chatbotMessages.createdAt);
+  }
+
+  async createChatbotMessage(message: InsertChatbotMessage): Promise<ChatbotMessage> {
+    const [newMessage] = await db.insert(chatbotMessages).values(message).returning();
+    return newMessage;
   }
 }
 

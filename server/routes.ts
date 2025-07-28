@@ -3,7 +3,18 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertMoodEntrySchema, insertCommunityPostSchema, insertMilestoneSchema } from "@shared/schema";
+import { 
+  insertMoodEntrySchema, 
+  insertCommunityPostSchema, 
+  insertMilestoneSchema,
+  insertDiscussionChannelSchema,
+  insertChannelMessageSchema,
+  insertConsultationSchema,
+  insertChatbotConversationSchema,
+  insertChatbotMessageSchema,
+  insertEnhancedResourceSchema,
+  insertContentCategorySchema
+} from "@shared/schema";
 import Stripe from "stripe";
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -292,9 +303,237 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Content Management Routes
+  app.get('/api/content/categories', async (req, res) => {
+    try {
+      const categories = await storage.getContentCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching content categories:", error);
+      res.status(500).json({ message: "Failed to fetch content categories" });
+    }
+  });
+
+  app.post('/api/content/categories', isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = insertContentCategorySchema.parse(req.body);
+      const category = await storage.createContentCategory(validatedData);
+      res.json(category);
+    } catch (error) {
+      console.error("Error creating content category:", error);
+      res.status(400).json({ message: "Failed to create content category" });
+    }
+  });
+
+  app.get('/api/enhanced-resources', async (req, res) => {
+    try {
+      const { categoryId } = req.query;
+      const resources = await storage.getEnhancedResources(categoryId as string);
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching enhanced resources:", error);
+      res.status(500).json({ message: "Failed to fetch enhanced resources" });
+    }
+  });
+
+  app.get('/api/enhanced-resources/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const resource = await storage.getEnhancedResource(id);
+      if (!resource) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      
+      // Update view count
+      await storage.updateResourceViews(id);
+      res.json(resource);
+    } catch (error) {
+      console.error("Error fetching enhanced resource:", error);
+      res.status(500).json({ message: "Failed to fetch enhanced resource" });
+    }
+  });
+
+  // Discussion Channels Routes
+  app.get('/api/channels', async (req, res) => {
+    try {
+      const channels = await storage.getDiscussionChannels();
+      res.json(channels);
+    } catch (error) {
+      console.error("Error fetching discussion channels:", error);
+      res.status(500).json({ message: "Failed to fetch discussion channels" });
+    }
+  });
+
+  app.post('/api/channels', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertDiscussionChannelSchema.parse({
+        ...req.body,
+        moderatorId: userId
+      });
+      const channel = await storage.createDiscussionChannel(validatedData);
+      res.json(channel);
+    } catch (error) {
+      console.error("Error creating discussion channel:", error);
+      res.status(400).json({ message: "Failed to create discussion channel" });
+    }
+  });
+
+  app.get('/api/channels/:channelId/messages', async (req, res) => {
+    try {
+      const { channelId } = req.params;
+      const { limit } = req.query;
+      const messages = await storage.getChannelMessages(channelId, limit ? parseInt(limit as string) : 50);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching channel messages:", error);
+      res.status(500).json({ message: "Failed to fetch channel messages" });
+    }
+  });
+
+  app.post('/api/channels/:channelId/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const { channelId } = req.params;
+      const userId = req.user.claims.sub;
+      const validatedData = insertChannelMessageSchema.parse({
+        ...req.body,
+        channelId,
+        userId
+      });
+      const message = await storage.createChannelMessage(validatedData);
+      
+      // Send real-time notification via WebSocket
+      if (wss) {
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'new_channel_message',
+              channelId,
+              message
+            }));
+          }
+        });
+      }
+      
+      res.json(message);
+    } catch (error) {
+      console.error("Error creating channel message:", error);
+      res.status(400).json({ message: "Failed to create channel message" });
+    }
+  });
+
+  // Doctor Consultation Routes
+  app.get('/api/doctors', async (req, res) => {
+    try {
+      const { specialization } = req.query;
+      const doctors = await storage.getDoctors(specialization as string);
+      res.json(doctors);
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+      res.status(500).json({ message: "Failed to fetch doctors" });
+    }
+  });
+
+  app.get('/api/consultations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const consultations = await storage.getConsultations(userId);
+      res.json(consultations);
+    } catch (error) {
+      console.error("Error fetching consultations:", error);
+      res.status(500).json({ message: "Failed to fetch consultations" });
+    }
+  });
+
+  app.post('/api/consultations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertConsultationSchema.parse({
+        ...req.body,
+        patientId: userId
+      });
+      const consultation = await storage.createConsultation(validatedData);
+      res.json(consultation);
+    } catch (error) {
+      console.error("Error creating consultation:", error);
+      res.status(400).json({ message: "Failed to create consultation" });
+    }
+  });
+
+  // AI Chatbot Routes
+  app.get('/api/chatbot/conversations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const conversations = await storage.getChatbotConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching chatbot conversations:", error);
+      res.status(500).json({ message: "Failed to fetch chatbot conversations" });
+    }
+  });
+
+  app.post('/api/chatbot/conversations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const validatedData = insertChatbotConversationSchema.parse({
+        userId,
+        sessionId,
+        title: req.body.title || "New Conversation"
+      });
+      const conversation = await storage.createChatbotConversation(validatedData);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error creating chatbot conversation:", error);
+      res.status(400).json({ message: "Failed to create chatbot conversation" });
+    }
+  });
+
+  app.get('/api/chatbot/conversations/:conversationId/messages', isAuthenticated, async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      const messages = await storage.getChatbotMessages(conversationId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chatbot messages:", error);
+      res.status(500).json({ message: "Failed to fetch chatbot messages" });
+    }
+  });
+
+  app.post('/api/chatbot/conversations/:conversationId/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const { conversationId } = req.params;
+      const userMessage = insertChatbotMessageSchema.parse({
+        conversationId,
+        role: 'user',
+        content: req.body.content
+      });
+      
+      await storage.createChatbotMessage(userMessage);
+      
+      // Here you would integrate with Perplexity AI API for intelligent responses
+      // For now, we'll create a simple response
+      const aiResponse = insertChatbotMessageSchema.parse({
+        conversationId,
+        role: 'assistant',
+        content: `ขอบคุณที่แบ่งปันความรู้สึกของคุณ ฉันเข้าใจว่าการฟื้นฟูเป็นเส้นทางที่ท้าทาย คุณต้องการคำแนะนำเกี่ยวกับเรื่องใดเป็นพิเศษ?`,
+        metadata: { 
+          mood_detected: 'neutral',
+          crisis_level: 'low'
+        }
+      });
+      
+      const response = await storage.createChatbotMessage(aiResponse);
+      res.json({ userMessage, aiResponse: response });
+    } catch (error) {
+      console.error("Error creating chatbot message:", error);
+      res.status(400).json({ message: "Failed to create chatbot message" });
+    }
+  });
+
   const httpServer = createServer(app);
 
-  // WebSocket server for real-time community chat
+  // WebSocket server for real-time community chat and channel messages
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   wss.on('connection', (ws, req) => {

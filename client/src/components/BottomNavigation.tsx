@@ -9,11 +9,11 @@ export default function BottomNavigation({ currentTab }: BottomNavigationProps) 
   const [, setLocation] = useLocation();
 
   const tabs = [
-    { id: 'home', name: 'หน้าหลัก', icon: 'fas fa-home', path: '/' },
+    { id: 'home', name: 'หน้าหลัก', icon: 'fas fa-home', path: '/home' },
+    { id: 'channels', name: 'ช่องสนทนา', icon: 'fas fa-comments', path: '/channels' },
+    { id: 'ai-chat', name: 'AI ที่ปรึกษา', icon: 'fas fa-robot', path: '/ai-chat' },
+    { id: 'doctors', name: 'แพทย์', icon: 'fas fa-user-md', path: '/doctors' },
     { id: 'progress', name: 'ความก้าวหน้า', icon: 'fas fa-chart-line', path: '/progress' },
-    { id: 'goals', name: 'เป้าหมาย', icon: 'fas fa-bullseye', path: '/goals' },
-    { id: 'analytics', name: 'วิเคราะห์', icon: 'fas fa-brain', path: '/analytics' },
-    { id: 'community', name: 'ชุมชน', icon: 'fas fa-users', path: '/community' },
   ];
 
   return (

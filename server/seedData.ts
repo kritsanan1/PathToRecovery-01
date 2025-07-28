@@ -221,7 +221,116 @@ export async function seedDatabase() {
       }
     }
 
-    console.log("Database seeding completed successfully!");
+    // Seed discussion channels
+    const sampleChannels = [
+      {
+        name: "การสนับสนุนทั่วไป",
+        description: "พื้นที่สำหรับแบ่งปันความรู้สึกและรับการสนับสนุนจากชุมชน",
+        category: "support",
+        memberCount: 45,
+        moderatorId: "system"
+      },
+      {
+        name: "เรื่องราวการฟื้นฟู",
+        description: "แบ่งปันประสบการณ์และเรื่องราวแรงบันดาลใจ",
+        category: "recovery_stories", 
+        memberCount: 32,
+        moderatorId: "system"
+      },
+      {
+        name: "เช็คอินรายวัน",
+        description: "ติดตามความรู้สึกและความก้าวหน้าประจำวัน",
+        category: "daily_check_in",
+        memberCount: 67,
+        moderatorId: "system"
+      },
+      {
+        name: "แหล่งข้อมูลและเทคนิค",
+        description: "แบ่งปันทรัพยากรและเทคนิคการฟื้นฟูที่มีประสิทธิภาพ",
+        category: "resources",
+        memberCount: 28,
+        moderatorId: "system"
+      }
+    ];
+
+    // Seed doctors
+    const sampleDoctors = [
+      {
+        specialization: "addiction_medicine",
+        bio: "แพทย์เชี่ยวชาญด้านการเสพติดพร้อมประสบการณ์ 15 ปี ในการช่วยเหลือผู้ป่วยฟื้นฟู",
+        consultationRate: 2500,
+        isAvailable: true,
+        rating: 4.8,
+        totalConsultations: 234,
+        languages: ["thai", "english"]
+      },
+      {
+        specialization: "psychiatry",
+        bio: "จิตแพทย์ผู้เชี่ยวชาญด้านสุขภาพจิตและการฟื้นฟูจากการเสพติด",
+        consultationRate: 3000,
+        isAvailable: true,
+        rating: 4.9,
+        totalConsultations: 189,
+        languages: ["thai"]
+      },
+      {
+        specialization: "counseling",
+        bio: "นักจิตวิทยาให้คำปรึกษาที่มีประสบการณ์ในการช่วยเหลือครอบครัวและผู้ป่วย",
+        consultationRate: 1800,
+        isAvailable: true,
+        rating: 4.7,
+        totalConsultations: 156,
+        languages: ["thai", "english"]
+      }
+    ];
+
+    // Seed content categories
+    const sampleCategories = [
+      {
+        name: "สุขภาพจิต",
+        description: "ความรู้เกี่ยวกับสุขภาพจิตและการดูแลตนเอง",
+        color: "#4F46E5",
+        orderIndex: 1
+      },
+      {
+        name: "เทคนิคการฟื้นฟู", 
+        description: "วิธีการและเทคนิคการฟื้นฟูที่มีประสิทธิภาพ",
+        color: "#059669",
+        orderIndex: 2
+      },
+      {
+        name: "การสนับสนุนครอบครัว",
+        description: "คำแนะนำสำหรับครอบครัวและคนใกล้ชิด",
+        color: "#DC2626",
+        orderIndex: 3
+      }
+    ];
+
+    for (const channel of sampleChannels) {
+      try {
+        await storage.createDiscussionChannel(channel);
+      } catch (error) {
+        console.log("Discussion channel already exists or insert failed:", error);
+      }
+    }
+
+    for (const doctor of sampleDoctors) {
+      try {
+        await storage.createDoctor(doctor);
+      } catch (error) {
+        console.log("Doctor already exists or insert failed:", error);
+      }
+    }
+
+    for (const category of sampleCategories) {
+      try {
+        await storage.createContentCategory(category);
+      } catch (error) {
+        console.log("Content category already exists or insert failed:", error);
+      }
+    }
+
+    console.log("Database seeded successfully with advanced features!");
   } catch (error) {
     console.error("Error seeding database:", error);
   }

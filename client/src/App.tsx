@@ -15,6 +15,9 @@ import Analytics from "@/pages/analytics";
 import GoalSetting from "@/pages/goal-setting";
 import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
+import Channels from "@/pages/channels";
+import AIChat from "@/pages/ai-chat";
+import Doctors from "@/pages/doctors";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,12 +42,16 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Home} />
+          <Route path="/home" component={Home} />
           <Route path="/progress" component={Progress} />
           <Route path="/resources" component={Resources} />
           <Route path="/community" component={Community} />
           <Route path="/crisis" component={Crisis} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/goals" component={GoalSetting} />
+          <Route path="/channels" component={Channels} />
+          <Route path="/ai-chat" component={AIChat} />
+          <Route path="/doctors" component={Doctors} />
           <Route path="/payment" component={Payment} />
           <Route path="/payment-success" component={PaymentSuccess} />
         </>
